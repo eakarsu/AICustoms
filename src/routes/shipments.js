@@ -1,9 +1,40 @@
 const router = require('express').Router();
+const { body, validationResult } = require('express-validator');
+
+function validate(req, res, next) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  next();
+}
+
+const shipmentValidation = [
+  body('origin_country').isLength({ min: 2, max: 2 }).withMessage('origin_country must be 2-letter ISO code'),
+  body('destination_country').isLength({ min: 2, max: 2 }).withMessage('destination_country must be 2-letter ISO code'),
+  body('declared_value').optional().isFloat({ min: 0 }).withMessage('declared_value must be a positive number'),
+  body('hs_code').optional().matches(/^\d{4,10}(\.\d+)?$/).withMessage('hs_code format invalid (e.g. 8471.30)')
+];
 
 router.get('/', async (req, res) => {
   try {
-    const result = await req.app.locals.pool.query('SELECT * FROM shipments ORDER BY created_at DESC');
-    res.json(result.rows);
+    const pool = req.app.locals.pool;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const [result, countResult] = await Promise.all([
+      pool.query('SELECT * FROM shipments ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]),
+      pool.query('SELECT COUNT(*) as total FROM shipments')
+    ]);
+
+    res.json({
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total: parseInt(countResult.rows[0].total),
+        pages: Math.ceil(countResult.rows[0].total / limit)
+      }
+    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -15,7 +46,7 @@ router.get('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', shipmentValidation, validate, async (req, res) => {
   try {
     const { tracking_number, carrier, origin_country, destination_country, shipper, consignee, goods_description, declared_value, currency, weight_kg, compliance_status, customs_status, estimated_arrival, notes } = req.body;
     const result = await req.app.locals.pool.query(
@@ -26,7 +57,7 @@ router.post('/', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', shipmentValidation, validate, async (req, res) => {
   try {
     const { tracking_number, carrier, origin_country, destination_country, shipper, consignee, goods_description, declared_value, currency, weight_kg, compliance_status, customs_status, estimated_arrival, notes } = req.body;
     const result = await req.app.locals.pool.query(

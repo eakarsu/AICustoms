@@ -2,8 +2,25 @@ const router = require('express').Router();
 
 router.get('/', async (req, res) => {
   try {
-    const result = await req.app.locals.pool.query('SELECT * FROM audit_trail ORDER BY created_at DESC');
-    res.json(result.rows);
+    const pool = req.app.locals.pool;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const [result, countResult] = await Promise.all([
+      pool.query('SELECT * FROM audit_trail ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]),
+      pool.query('SELECT COUNT(*) as total FROM audit_trail')
+    ]);
+
+    res.json({
+      data: result.rows,
+      pagination: {
+        page,
+        limit,
+        total: parseInt(countResult.rows[0].total),
+        pages: Math.ceil(countResult.rows[0].total / limit)
+      }
+    });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
