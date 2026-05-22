@@ -43,6 +43,7 @@ app.use('/api/ai', require('./routes/sanctionsAgent'));
 app.use('/api/ai', require('./routes/declarationAuto'));
 app.use('/api/ai', require('./routes/supplyVisibility'));
 app.use('/api/ai', require('./routes/tariffOptimize'));
+app.use('/api/ftz-admission-reconciliation', require('./routes/ftzAdmissionReconciliation'));
 // SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));

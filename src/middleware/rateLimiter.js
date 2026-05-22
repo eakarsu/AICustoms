@@ -1,11 +1,12 @@
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 
 const aiRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 20,
-  keyGenerator: (req) => {
+  keyGenerator: (req, res) => {
     // Use user ID from JWT if available, otherwise IP
-    return (req.user && req.user.id) ? `user_${req.user.id}` : req.ip;
+    return (req.user && req.user.id) ? `user_${req.user.id}` : ipKeyGenerator(req, res);
   },
   handler: (req, res) => {
     res.status(429).json({

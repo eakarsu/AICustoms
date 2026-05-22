@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import Classify from './pages/Classify.jsx';
 import Screen from './pages/Screen.jsx';
 import TradeTools from './pages/TradeTools.jsx';
+import FtzAdmissionReconciliation from './pages/FtzAdmissionReconciliation.jsx';
 
 // // === Batch 02 Gaps & Frontend Mounts ===
 import CfTariffComplianceOptimization from './pages/CfTariffComplianceOptimization.jsx';
@@ -19,6 +20,11 @@ import GapNoSmsPushNotifications from './pages/GapNoSmsPushNotifications.jsx';
 import GapNoPaymentDutyCollectionWorkflow from './pages/GapNoPaymentDutyCollectionWorkflow.jsx';
 import GapNoCalendarScheduling from './pages/GapNoCalendarScheduling.jsx';
 import GapNoMobileApiSurface from './pages/GapNoMobileApiSurface.jsx';
+
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
 
 const navStyle = {
   display: 'flex', gap: '1rem', padding: '1rem 2rem',
@@ -46,14 +52,20 @@ export default function App() {
         <NavLink to="/classify" style={linkStyle}>Classify</NavLink>
         <NavLink to="/screen" style={linkStyle}>Screen</NavLink>
         <NavLink to="/trade-tools" style={linkStyle}>Trade Tools</NavLink>
+        <NavLink to="/ftz-reconciliation" style={linkStyle}>FTZ Reconcile</NavLink>
       </nav>
       <div style={contentStyle}>
         <Routes>
+        <Route path="/insights/timeline" element={<TimelineView />} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/classify" element={<Classify />} />
           <Route path="/screen" element={<Screen />} />
           <Route path="/trade-tools" element={<TradeTools />} />
+          <Route path="/ftz-reconciliation" element={<FtzAdmissionReconciliation />} />
         
         {/* // === Batch 02 Gaps & Frontend Mounts === */}
         <Route path="/cf/tariff-compliance-optimization" element={<CfTariffComplianceOptimization />} />
