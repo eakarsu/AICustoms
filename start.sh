@@ -1,48 +1,9 @@
-#!/bin/bash
-
-echo "========================================="
-echo "  AI Customs & Trade Compliance Platform"
-echo "========================================="
-echo ""
-
-# Kill any processes on port 3001
-echo "[1/6] Killing processes on port 3001..."
-lsof -ti:3001 | xargs kill -9 2>/dev/null || true
-echo "  Done."
-
-# Drop and recreate database
-echo "[2/6] Recreating database..."
-dropdb ai_customs 2>/dev/null || true
-createdb ai_customs
-echo "  Database 'ai_customs' created."
-
-# Install dependencies
-echo "[3/6] Installing dependencies..."
-cd "$(dirname "$0")"
-npm install --silent
-echo "  Dependencies installed."
-
-# Run migrations
-echo "[4/6] Running migrations..."
-node src/db/migrate.js
-echo "  Migrations complete."
-
-# Seed data
-echo "[5/6] Seeding data..."
-node src/db/seed.js
-echo "  Seed data inserted."
-
-# Start server
-echo "[6/6] Starting server..."
-echo ""
-echo "========================================="
-echo "  Server: http://localhost:3001"
-echo "  Login:  admin@aicustoms.com / admin123"
-echo "========================================="
-echo ""
-
-if command -v nodemon &> /dev/null; then
-  nodemon src/server.js
-else
-  node --watch src/server.js 2>/dev/null || node src/server.js
-fi
+#!/usr/bin/env bash
+set -euo pipefail
+project_dir="$(cd "$(dirname "$0")" && pwd)"
+[[ -f "$project_dir/.env" ]] || { echo 'Missing .env; copy .env.example and configure it.' >&2; exit 1; }
+[[ -d "$project_dir/node_modules" ]] || { echo 'Dependencies missing; run scripts/bootstrap.sh.' >&2; exit 1; }
+set -a; source "$project_dir/.env"; set +a
+: "${DATABASE_URL:?DATABASE_URL is required}"; : "${JWT_SECRET:?JWT_SECRET is required}"
+[[ ${#JWT_SECRET} -ge 32 ]] || { echo 'JWT_SECRET must contain at least 32 characters.' >&2; exit 1; }
+exec npm --prefix "$project_dir" start
