@@ -21,6 +21,13 @@ const origins=(process.env.CORS_ORIGINS||'http://localhost:3000').split(',').map
 app.use(cors({origin(orig,cb){if(!orig||origins.includes(orig))return cb(null,true);return cb(new Error('origin not allowed'));},credentials:true}));
 app.use(express.json({ limit: '10mb' }));
 app.use(generalLimiter);
+app.get('/runtime-config.js', (_req, res) => {
+  const enabled = process.env.NODE_ENV !== 'production'
+    && process.env.ENABLE_DEMO_CREDENTIAL_AUTOFILL !== 'false'
+    && process.env.DEMO_EMAIL && process.env.DEMO_PASSWORD;
+  const credentials = enabled ? { email: process.env.DEMO_EMAIL, password: process.env.DEMO_PASSWORD } : null;
+  res.type('application/javascript').send(`window.DEMO_CREDENTIALS=${JSON.stringify(credentials)};`);
+});
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Routes

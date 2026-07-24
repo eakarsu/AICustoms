@@ -4,15 +4,27 @@ const bcrypt = require('bcryptjs');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
+if (process.env.NODE_ENV === 'production' || process.env.ALLOW_DEMO_SEED !== 'true' || process.env.RESET_DATABASE !== '1' || process.env.SEED_DEMO_DATA !== '1') {
+  throw new Error('Destructive demo seed requires ALLOW_DEMO_SEED=true, RESET_DATABASE=1, and SEED_DEMO_DATA=1 outside production');
+}
+
 async function seed() {
   try {
+    const demoEmail = process.env.DEMO_EMAIL || '';
+    const demoPassword = process.env.DEMO_PASSWORD || '';
+    if (!demoEmail.includes('@')) throw new Error('DEMO_EMAIL must be a valid email address');
+    if (demoPassword.length < 12) throw new Error('DEMO_PASSWORD must be at least 12 characters');
+    await pool.query(`TRUNCATE TABLE
+      generated_documents, duty_calculations, compliance_screenings, hs_classifications,
+      audit_trail, trade_agreements, regulations, products, shipments, users
+      RESTART IDENTITY CASCADE`);
     // Users
-    const hash = await bcrypt.hash('admin123', 10);
+    const hash = await bcrypt.hash(demoPassword, 10);
     await pool.query(`INSERT INTO users (name, email, password_hash, role) VALUES
-      ('Admin User', 'admin@aicustoms.com', $1, 'admin'),
+      ('Admin User', $2, $1, 'admin'),
       ('Sarah Chen', 'sarah@aicustoms.com', $1, 'analyst'),
       ('James Wilson', 'james@aicustoms.com', $1, 'manager')
-    `, [hash]);
+    `, [hash, demoEmail]);
 
     // HS Codes (16 items)
     await pool.query(`INSERT INTO hs_codes (product_name, description, hs_code, chapter, section, duty_rate, country_origin, notes) VALUES
