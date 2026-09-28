@@ -113,7 +113,7 @@ const App = {
             </div>
             <button type="submit" class="btn btn-primary btn-block">Sign In</button>
           </form>
-          <button class="btn-autofill" id="btn-autofill">\u26a1 Auto-fill Demo Credentials</button>
+          <button class="btn-autofill" id="btn-autofill">\u26a1 Auto Fill Demo Credentials</button>
         </div>
       </div>`;
 

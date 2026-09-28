@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard.jsx';
 import Classify from './pages/Classify.jsx';
 import Screen from './pages/Screen.jsx';
 import TradeTools from './pages/TradeTools.jsx';
 import FtzAdmissionReconciliation from './pages/FtzAdmissionReconciliation.jsx';
+import Login from './pages/Login.jsx';
 
 // // === Batch 02 Gaps & Frontend Mounts ===
 import CfTariffComplianceOptimization from './pages/CfTariffComplianceOptimization.jsx';
@@ -44,6 +45,19 @@ const linkStyle = ({ isActive }) => ({
 const contentStyle = { padding: '2rem', maxWidth: '1200px', margin: '0 auto' };
 
 export default function App() {
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); }
+    catch { return null; }
+  });
+
+  if (!user) return <Login onLogin={setUser} />;
+
+  function signOut() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+  }
+
   return (
     <BrowserRouter>
       <nav style={navStyle}>
@@ -53,6 +67,8 @@ export default function App() {
         <NavLink to="/screen" style={linkStyle}>Screen</NavLink>
         <NavLink to="/trade-tools" style={linkStyle}>Trade Tools</NavLink>
         <NavLink to="/ftz-reconciliation" style={linkStyle}>FTZ Reconcile</NavLink>
+        <span style={{ marginLeft: 'auto', color: '#cbd5e1' }}>{user.name || user.email}</span>
+        <button type="button" onClick={signOut}>Sign Out</button>
       </nav>
       <div style={contentStyle}>
         <Routes>
