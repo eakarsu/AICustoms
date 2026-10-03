@@ -1,46 +1,5 @@
 import React, { useState } from 'react';
 
-function __demoAutofill() {
-  (async () => {
-    let email = "";
-    let password = "";
-    try {
-      const response = await fetch("/api/auth/demo-credentials", { cache: "no-store" });
-      if (response.ok) {
-        const data = await response.json();
-        email = data.email || data.username || "";
-        password = data.password || "";
-      }
-    } catch (error) {
-      /* fall back to build-time credentials below */
-    }
-    if (!email || !password) {
-      const env = (typeof process !== "undefined" && process.env) ? process.env : {};
-      email = email || env.REACT_APP_DEMO_EMAIL || env.VITE_DEMO_EMAIL || "";
-      password = password || env.REACT_APP_DEMO_PASSWORD || env.VITE_DEMO_PASSWORD || "";
-    }
-    const form = document.querySelector("form");
-    const setValue = (element, value) => {
-      if (!element) return;
-      const prototype = element.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-      const setter = Object.getOwnPropertyDescriptor(prototype, "value").set;
-      setter.call(element, value);
-      element.dispatchEvent(new Event("input", { bubbles: true }));
-    };
-    const scope = form || document;
-    setValue(scope.querySelector('input[type="email"], input[name="email"], input[name="username"]') || scope.querySelectorAll("input")[0], email);
-    setValue(scope.querySelector('input[type="password"], input[name="password"]') || scope.querySelectorAll("input")[1], password);
-    window.setTimeout(() => {
-      if (form && typeof form.requestSubmit === "function") {
-        form.requestSubmit();
-      } else {
-        const submit = scope.querySelector('button[type="submit"], input[type="submit"]');
-        if (submit) submit.click();
-      }
-    }, 50);
-  })();
-}
-
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -96,7 +55,7 @@ export default function Login({ onLogin }) {
           Password
           <input type="password" required value={password} onChange={(event) => setPassword(event.target.value)} style={{ display: 'block', boxSizing: 'border-box', width: '100%', marginTop: 6, padding: 12 }} />
         </label>
-        <button type="button" onClick={__demoAutofill} style={{ width: '100%', padding: 11, marginBottom: 12 }}>
+        <button type="button" onClick={fillDemoCredentials} style={{ width: '100%', padding: 11, marginBottom: 12 }}>
           Auto Fill Demo Credentials
         </button>
         <button type="submit" disabled={loading} style={{ width: '100%', padding: 12, background: '#2563eb', color: 'white', border: 0, borderRadius: 6 }}>
