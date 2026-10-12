@@ -55,8 +55,8 @@ export default function Login({ onLogin }) {
           Password
           <input type="password" required value={password} onChange={(event) => setPassword(event.target.value)} style={{ display: 'block', boxSizing: 'border-box', width: '100%', marginTop: 6, padding: 12 }} />
         </label>
-        <button type="button" onClick={fillDemoCredentials} style={{ width: '100%', padding: 11, marginBottom: 12 }}>
-          Auto Fill Demo Credentials
+        <button type="button" onClick={fillDemoCredentials} disabled={loading} style={{ width: '100%', padding: 11, marginBottom: 12 }}>
+          Fill Demo Credentials
         </button>
         <button type="submit" disabled={loading} style={{ width: '100%', padding: 12, background: '#2563eb', color: 'white', border: 0, borderRadius: 6 }}>
           {loading ? 'Signing in...' : 'Sign In'}

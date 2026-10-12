@@ -1,3 +1,4 @@
+import AIReportLibrary from "./components/AIReportLibrary";
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard.jsx';
@@ -59,7 +60,7 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
+    <><AIReportLibrary floating /><BrowserRouter>
       <nav style={navStyle}>
         <span style={logoStyle}>AI Customs</span>
         <NavLink to="/dashboard" style={linkStyle}>Dashboard</NavLink>
@@ -99,6 +100,6 @@ export default function App() {
         <Route path="/gap/no-mobile-api-surface" element={<GapNoMobileApiSurface />} />
       </Routes>
       </div>
-    </BrowserRouter>
+    </BrowserRouter></>
   );
 }

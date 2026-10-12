@@ -6,6 +6,40 @@ const App = {
   currentView: 'dashboard',
   data: {},
 
+  records(payload) {
+    if (Array.isArray(payload)) return payload;
+    if (payload && Array.isArray(payload.data)) return payload.data;
+    throw new Error('Records response must contain an array.');
+  },
+
+  aiPresets: {
+    classify: [
+      { product_name: 'Insulated steel bottle', description: 'Reusable 750 ml vacuum-insulated beverage bottle.', material: '304 stainless steel and polypropylene', intended_use: 'Consumer beverage container' },
+      { product_name: 'Cotton knit shirt', description: 'Short-sleeve crew-neck garment for adults.', material: '100% cotton', intended_use: 'Casual apparel' },
+      { product_name: 'Rechargeable desk lamp', description: 'Adjustable LED task light with integrated battery.', material: 'Aluminum and ABS plastic', intended_use: 'Indoor desk lighting' }
+    ],
+    'screen-compliance': [
+      { entity_name: 'Northstar Industrial Components Ltd.', entity_type: 'Company', country: 'GB' },
+      { entity_name: 'Morgan Reed', entity_type: 'Individual', country: 'CA' },
+      { entity_name: 'Harbor Trade Association', entity_type: 'Organization', country: 'DE' }
+    ],
+    'screen-sanctions': [
+      { entity_name: 'Northstar Industrial Components Ltd.', entity_type: 'Company', country: 'GB' },
+      { entity_name: 'Morgan Reed', entity_type: 'Individual', country: 'CA' },
+      { entity_name: 'Harbor Trade Association', entity_type: 'Organization', country: 'DE' }
+    ],
+    'generate-document': [
+      { document_type: 'Commercial Invoice', shipper: 'Northstar Components Ltd.', consignee: 'Harbor Equipment GmbH', goods_description: '100 steel pump impellers', origin_country: 'GB', destination_country: 'DE', declared_value: '4500' },
+      { document_type: 'Packing List', shipper: 'Pacific Textiles Co.', consignee: 'Maple Retail Ltd.', goods_description: '250 cotton knit shirts in 10 cartons', origin_country: 'IN', destination_country: 'CA', declared_value: '2450' },
+      { document_type: 'Certificate of Origin', shipper: 'Alpine Lighting AG', consignee: 'Coastal Home Inc.', goods_description: '40 rechargeable LED desk lamps', origin_country: 'CH', destination_country: 'US', declared_value: '3200' }
+    ],
+    'calculate-duty': [
+      { product_name: 'Insulated steel bottle', hs_code: '7323.93', origin_country: 'CN', destination_country: 'US', declared_value: '1250', currency: 'USD' },
+      { product_name: 'Cotton knit shirt', hs_code: '6109.10', origin_country: 'IN', destination_country: 'CA', declared_value: '2450', currency: 'USD' },
+      { product_name: 'Rechargeable desk lamp', hs_code: '9405.21', origin_country: 'VN', destination_country: 'DE', declared_value: '3200', currency: 'EUR' }
+    ]
+  },
+
   features: [
     { id: 'hs-codes', name: 'HS Code Classification', icon: '\ud83d\udcca', desc: 'AI-powered tariff code classification for products', api: '/api/hs-codes', color: '#3b82f6',
       columns: ['product_name','hs_code','chapter','duty_rate','country_origin'],
@@ -113,7 +147,7 @@ const App = {
             </div>
             <button type="submit" class="btn btn-primary btn-block">Sign In</button>
           </form>
-          <button class="btn-autofill" id="btn-autofill">\u26a1 Auto Fill Demo Credentials</button>
+          <button type="button" class="btn-autofill" id="btn-autofill">\u26a1 Fill Demo Credentials</button>
         </div>
       </div>`;
 
@@ -231,7 +265,8 @@ const App = {
     await Promise.all(this.features.map(async f => {
       try {
         const data = await this.api(f.api);
-        counts[f.id] = Array.isArray(data) ? data.length : 0;
+        counts[f.id] = Number.isFinite(Number(data?.pagination?.total))
+          ? Number(data.pagination.total) : this.records(data).length;
       } catch { counts[f.id] = 0; }
     }));
 
@@ -295,6 +330,7 @@ const App = {
           </div>
           <div class="ai-panel-body" id="ai-panel-body" style="display:none;">
             <form id="ai-form">
+              <div class="ai-preset-bar"><strong>Fill every field</strong> ${['Example 1', 'Example 2', 'Example 3'].map((label, index) => `<button type="button" class="btn btn-secondary btn-sm ai-preset" data-index="${index}">${label}</button>`).join('')}</div>
               <div class="ai-form-row">
                 ${feature.aiFields.map(f => `
                   <div class="form-group">
@@ -355,6 +391,12 @@ const App = {
         e.preventDefault();
         this.runAI(feature);
       });
+      document.querySelectorAll('#ai-form .ai-preset').forEach((button) => button.addEventListener('click', () => {
+        const preset = this.aiPresets[feature.aiAction]?.[Number(button.dataset.index)];
+        if (!preset) return;
+        const form = document.getElementById('ai-form');
+        feature.aiFields.forEach((field) => { if (Object.hasOwn(preset, field.n)) form.elements.namedItem(field.n).value = preset[field.n]; });
+      }));
     }
 
     // Search
@@ -367,7 +409,7 @@ const App = {
 
     // Load data
     try {
-      const data = await this.api(feature.api);
+      const data = this.records(await this.api(feature.api));
       this.data[featureId] = data;
       this.renderTable(feature, data);
     } catch (err) {
@@ -554,43 +596,43 @@ const App = {
 
   renderAIResult(feature, result, container) {
     const data = result.classification || result.screening || result.sanctions || result.calculation || result.document;
-    if (!data) {
+    if (data === undefined || data === null) {
       container.innerHTML = '<p style="color:var(--text-muted)">No result returned.</p>';
       return;
     }
-
-    // If raw response, display nicely
-    if (data.raw_response) {
-      container.innerHTML = `
-        <div class="ai-result">
-          <div class="ai-result-header"><span class="ai-icon">\u2728</span><h3>AI Response</h3></div>
-          <div class="ai-result-body"><div style="white-space:pre-wrap;font-size:14px;line-height:1.6">${data.raw_response}</div></div>
-        </div>`;
-      return;
-    }
-
-    let html = '';
-
-    if (feature.aiAction === 'classify') {
-      html = this.renderClassificationResult(data);
-    } else if (feature.aiAction === 'screen-compliance') {
-      html = this.renderComplianceResult(data);
-    } else if (feature.aiAction === 'screen-sanctions') {
-      html = this.renderSanctionsResult(data);
-    } else if (feature.aiAction === 'calculate-duty') {
-      html = this.renderDutyResult(data);
-    } else if (feature.aiAction === 'generate-document') {
-      html = this.renderDocumentResult(data);
-    }
-
     container.innerHTML = `
       <div class="ai-result">
         <div class="ai-result-header">
           <span class="ai-icon">\u2728</span>
           <h3>AI Analysis Result</h3>
         </div>
-        <div class="ai-result-body">${html}</div>
+        <div class="ai-result-body">${this.renderStructuredAI(data)}</div>
       </div>`;
+  },
+
+  renderStructuredAI(value) {
+    const escape = (input) => String(input).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+    const label = (name) => escape(name.replace(/[_-]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()));
+    const render = (item) => {
+      if (typeof item === 'string') {
+        const trimmed = item.trim().replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/i, '$1');
+        if (/^[\[{]/.test(trimmed)) { try { return render(JSON.parse(trimmed)); } catch (_) { /* Show prose. */ } }
+      }
+      if (Array.isArray(item)) {
+        if (!item.length) return '<p>None reported.</p>';
+        if (item.every((row) => row && typeof row === 'object' && !Array.isArray(row))) {
+          const keys = [...new Set(item.flatMap((row) => Object.keys(row)))];
+          return `<div style="overflow-x:auto"><table class="data-table"><thead><tr>${keys.map((key) => `<th>${label(key)}</th>`).join('')}</tr></thead><tbody>${item.map((row) => `<tr>${keys.map((key) => `<td>${render(row[key])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+        }
+        return `<ul class="ai-list">${item.map((entry) => `<li>${render(entry)}</li>`).join('')}</ul>`;
+      }
+      if (item && typeof item === 'object') {
+        const entries = Object.entries(item).filter(([key]) => key !== 'raw_response' || Object.keys(item).length === 1);
+        return entries.map(([key, entry]) => `<section class="ai-section"><h4>${label(key)}</h4>${render(entry)}</section>`).join('');
+      }
+      return `<span>${item === null || item === undefined ? 'Not provided' : item === '' ? '(empty string)' : typeof item === 'boolean' ? (item ? 'Yes' : 'No') : escape(item)}</span>`;
+    };
+    return render(value);
   },
 
   renderClassificationResult(d) {

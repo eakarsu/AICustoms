@@ -1,4 +1,12 @@
 import React, { useState } from 'react';
+import FullFieldPresets from '../components/FullFieldPresets';
+import FormattedAIReport from '../components/FormattedAIReport';
+
+const presets = [
+  { label: 'Industrial supplier', values: { entity_name: 'Northstar Industrial Components Ltd.', entity_type: 'Company', country: 'GB' } },
+  { label: 'Individual buyer', values: { entity_name: 'Morgan Reed', entity_type: 'Individual', country: 'CA' } },
+  { label: 'Trade association', values: { entity_name: 'Harbor Trade Association', entity_type: 'Organization', country: 'DE' } },
+];
 
 const card = { background: '#fff', borderRadius: '10px', padding: '2rem', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', maxWidth: '700px' };
 const label = { display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#374151', fontSize: '0.9rem' };
@@ -51,62 +59,13 @@ export default function Screen() {
     }
   };
 
-  const ResultSection = ({ title, result, type }) => {
-    if (!result) return null;
-    const riskLevel = result.risk_level || (result.risk_score >= 70 ? 'high' : result.risk_score >= 40 ? 'medium' : 'low');
-    return (
-      <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1.2rem', marginTop: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <h3 style={{ fontWeight: 700, color: '#1a2340' }}>{title}</h3>
-          <span style={badge(riskLevel)}>{riskLevel?.toUpperCase() || 'UNKNOWN'}</span>
-        </div>
-        {result.summary && <p style={{ color: '#374151', marginBottom: '0.5rem' }}>{result.summary}</p>}
-        {result.match_found !== undefined && (
-          <p style={{ color: '#374151', marginBottom: '0.25rem' }}>
-            <strong>Match Found:</strong> {result.match_found ? 'Yes' : 'No'}
-            {result.match_score != null && ` (Score: ${result.match_score}/100)`}
-          </p>
-        )}
-        {result.risk_score != null && (
-          <p style={{ color: '#374151', marginBottom: '0.25rem' }}><strong>Risk Score:</strong> {result.risk_score}/100</p>
-        )}
-        {result.sanctions_status && (
-          <p style={{ color: '#374151', marginBottom: '0.25rem' }}><strong>Sanctions Status:</strong> {result.sanctions_status}</p>
-        )}
-        {result.embargo_status && (
-          <p style={{ color: '#374151', marginBottom: '0.5rem' }}><strong>Embargo Status:</strong> {result.embargo_status}</p>
-        )}
-        {result.recommendations && (
-          <div style={{ marginTop: '0.5rem' }}>
-            <strong>Recommendations:</strong>
-            <p style={{ color: '#64748b', marginTop: '0.25rem' }}>{
-              Array.isArray(result.recommendations) ? result.recommendations.join('; ') : result.recommendations
-            }</p>
-          </div>
-        )}
-        {result.screening_results?.length > 0 && (
-          <div style={{ marginTop: '0.75rem' }}>
-            <strong>Lists Checked:</strong>
-            <ul style={{ paddingLeft: '1.2rem', marginTop: '0.25rem' }}>
-              {result.screening_results.map((r, i) => (
-                <li key={i} style={{ color: '#64748b', fontSize: '0.9rem' }}>{r.list_name}: {r.match_type} — {r.details}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {result.raw_response && (
-          <pre style={{ background: '#1e293b', color: '#e2e8f0', padding: '1rem', borderRadius: '6px', fontSize: '0.8rem', overflow: 'auto', marginTop: '0.75rem' }}>
-            {result.raw_response}
-          </pre>
-        )}
-      </div>
-    );
-  };
+  const ResultSection = ({ title, result }) => result ? <FormattedAIReport response={result} title={title} /> : null;
 
   return (
     <div>
       <h1 style={h1}>Compliance & Sanctions Screening</h1>
       <div style={card}>
+        <FullFieldPresets value={form} presets={presets} onChange={setForm} disabled={loading.compliance || loading.sanctions} />
         <label style={label}>Entity Name *</label>
         <input style={input} name="entity_name" value={form.entity_name} onChange={handleChange} placeholder="Company or individual name" />
 

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import FormattedAIReport from "../components/FormattedAIReport";
+import FullFieldPresets from "../components/FullFieldPresets";
+import React, { useEffect, useState } from 'react';
 
 const card = { background: '#fff', borderRadius: '10px', padding: '2rem', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', maxWidth: '760px' };
 const label = { display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#374151', fontSize: '0.9rem' };
@@ -84,6 +86,11 @@ function ExportControls() {
 
   return (
     <form onSubmit={submit}>
+      <FullFieldPresets value={form} onChange={setForm} disabled={loading} presets={[
+        { label: 'Encryption module', values: { product_description: 'Industrial encryption module for telecom infrastructure with AES-256 support.', eccn_number: '5A002', destination_country: 'DE' } },
+        { label: 'Machine part', values: { product_description: 'Replacement stainless steel pump impeller for food processing equipment.', eccn_number: 'EAR99', destination_country: 'CA' } },
+        { label: 'Lab sensor', values: { product_description: 'Optical temperature sensor for laboratory process monitoring.', eccn_number: '3A999', destination_country: 'JP' } },
+      ]} />
       <label style={label}>Product Description *</label>
       <textarea style={textarea} value={form.product_description} required
         onChange={e => setForm(f => ({ ...f, product_description: e.target.value }))}
@@ -105,7 +112,7 @@ function ExportControls() {
 
       {noKey && <div style={warnBox}>AI service unavailable — the server has no <code>OPENROUTER_API_KEY</code> configured. Set it and retry.</div>}
       {error && <div style={errorBox}>{error}</div>}
-      {result && <pre style={{ ...resultBox, whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#0f172a' }}>{JSON.stringify(result, null, 2)}</pre>}
+      {result && <FormattedAIReport response={result} />}
     </form>
   );
 }
@@ -134,6 +141,11 @@ function CountryRisk() {
 
   return (
     <form onSubmit={submit}>
+      <FullFieldPresets value={form} onChange={setForm} disabled={loading} presets={[
+        { label: 'Canadian sourcing', values: { country_code: 'CA', trade_purpose: 'Importing aluminum components for US appliance manufacturing.' } },
+        { label: 'German export', values: { country_code: 'DE', trade_purpose: 'Exporting industrial pumps for installation at a commercial factory.' } },
+        { label: 'Japanese supplier', values: { country_code: 'JP', trade_purpose: 'Purchasing precision bearings for domestic machinery assembly.' } },
+      ]} />
       <label style={label}>Country Code (2-letter ISO) *</label>
       <input style={input} value={form.country_code} required maxLength={2}
         onChange={e => setForm(f => ({ ...f, country_code: e.target.value }))}
@@ -150,7 +162,7 @@ function CountryRisk() {
 
       {noKey && <div style={warnBox}>AI service unavailable — the server has no <code>OPENROUTER_API_KEY</code> configured. Set it and retry.</div>}
       {error && <div style={errorBox}>{error}</div>}
-      {result && <pre style={{ ...resultBox, whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#0f172a' }}>{JSON.stringify(result, null, 2)}</pre>}
+      {result && <FormattedAIReport response={result} />}
     </form>
   );
 }
@@ -185,6 +197,11 @@ function LandedCost() {
 
   return (
     <form onSubmit={submit}>
+      <FullFieldPresets value={{ productJson, origin, destinations }} disabled={loading} onChange={(next) => { setProductJson(next.productJson); setOrigin(next.origin); setDestinations(next.destinations); }} presets={[
+        { label: 'Steel bottles', values: { productJson: '{"name":"Insulated steel bottle","value_usd":12.50,"hs_code":"7323.93"}', origin: 'CN', destinations: 'US, DE, JP' } },
+        { label: 'Cotton shirts', values: { productJson: '{"name":"Cotton knit shirt","value_usd":9.80,"hs_code":"6109.10"}', origin: 'IN', destinations: 'US, CA, GB' } },
+        { label: 'Desk lamps', values: { productJson: '{"name":"Rechargeable desk lamp","value_usd":24.00,"hs_code":"9405.21"}', origin: 'VN', destinations: 'US, DE, AU' } },
+      ]} />
       <label style={label}>Product (JSON) *</label>
       <textarea style={{ ...textarea, fontFamily: 'monospace', minHeight: '120px' }} value={productJson} required
         onChange={e => setProductJson(e.target.value)} />
@@ -203,17 +220,28 @@ function LandedCost() {
 
       {noKey && <div style={warnBox}>AI service unavailable — the server has no <code>OPENROUTER_API_KEY</code> configured. Set it and retry.</div>}
       {error && <div style={errorBox}>{error}</div>}
-      {result && <pre style={{ ...resultBox, whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#0f172a' }}>{JSON.stringify(result, null, 2)}</pre>}
+      {result && <FormattedAIReport response={result} />}
     </form>
   );
 }
 
 function BrokerInstruction() {
   const [shipmentId, setShipmentId] = useState('');
+  const [shipments, setShipments] = useState([]);
+  const [shipmentError, setShipmentError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [noKey, setNoKey] = useState(false);
   const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/shipments?limit=100', { signal: controller.signal, headers: authHeaders() })
+      .then((response) => { if (!response.ok) throw new Error('Existing shipments could not be loaded.'); return response.json(); })
+      .then((data) => setShipments(Array.isArray(data.data) ? data.data : []))
+      .catch((failure) => { if (failure.name !== 'AbortError') setShipmentError(failure.message); });
+    return () => controller.abort();
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -229,6 +257,8 @@ function BrokerInstruction() {
 
   return (
     <form onSubmit={submit}>
+      <p style={warnBox}>Select an existing shipment. Examples use real records and never create a shipment.</p>
+      {shipments.length > 0 ? <div className="ai-preset-bar"><strong>Fill from a shipment</strong><div className="ai-actions">{shipments.slice(0, 3).map((shipment) => <button key={shipment.id} type="button" className="btn btn-secondary" onClick={() => setShipmentId(String(shipment.id))}>{shipment.tracking_number || `Shipment ${shipment.id}`}</button>)}</div></div> : <p>{shipmentError || 'No saved shipments are available for preset buttons.'}</p>}
       <label style={label}>Shipment ID *</label>
       <input style={input} value={shipmentId} required
         onChange={e => setShipmentId(e.target.value)} placeholder="numeric id from the Shipments table" />
@@ -239,7 +269,7 @@ function BrokerInstruction() {
 
       {noKey && <div style={warnBox}>AI service unavailable — the server has no <code>OPENROUTER_API_KEY</code> configured. Set it and retry.</div>}
       {error && <div style={errorBox}>{error}</div>}
-      {result && <pre style={{ ...resultBox, whiteSpace: 'pre-wrap', fontSize: '0.85rem', color: '#0f172a' }}>{JSON.stringify(result, null, 2)}</pre>}
+      {result && <FormattedAIReport response={result} />}
     </form>
   );
 }

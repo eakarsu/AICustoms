@@ -55,13 +55,22 @@ app.use('/api/ai', require('./routes/supplyVisibility'));
 app.use('/api/ai', require('./routes/tariffOptimize'));
 app.use('/api/ftz-admission-reconciliation', require('./routes/ftzAdmissionReconciliation'));
 app.use('/api/governed-cases', require('./routes/governedCases'));
+
+// Advisory AI reports only; native execution and approval routes stay unchanged.
+// Mounted before the SPA fallback so GET /api/report-workspace/* is served as JSON.
+const aiWorkspaceSupport = require("../aiWorkspaceAdapters.cjs");
+const aiWorkspaceDatabase = pool;
+app.use('/api/report-workspace', require("../aiWorkspace.cjs").createAIWorkspaceRouter({
+  pool: aiWorkspaceDatabase, authenticateToken: aiWorkspaceSupport.verifiedActorAuth(require("./middleware/auth.js")),
+  aiRateLimiter: aiWorkspaceSupport.createWorkspaceLimiter(), features: require("../aiWorkspaceFeatures.json"),
+}));
+
 // SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 // Generated gap routers are deliberately quarantined and are not mounted.
-
 app.listen(PORT, () => {
   console.log(`AI Customs server running on http://localhost:${PORT}`);
 });

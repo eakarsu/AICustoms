@@ -10,6 +10,11 @@ const badge = (level) => {
   const colors = { low: '#22c55e', medium: '#f59e0b', high: '#ef4444', critical: '#7c3aed', pending: '#64748b', pass: '#22c55e', fail: '#ef4444' };
   return { background: colors[level] || '#64748b', color: '#fff', padding: '2px 8px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 600 };
 };
+const records = (payload) => {
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload)) return payload;
+  throw new Error('Records response must contain an array.');
+};
 
 export default function Dashboard() {
   const [shipments, setShipments] = useState({ data: [], pagination: {} });
@@ -19,11 +24,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/shipments?limit=5').then(r => r.json()),
-      fetch('/api/compliance?limit=10').then(r => r.json())
+      fetch('/api/shipments?limit=20').then(r => { if (!r.ok) throw new Error('Shipments could not be loaded'); return r.json(); }),
+      fetch('/api/compliance?limit=20').then(r => { if (!r.ok) throw new Error('Screenings could not be loaded'); return r.json(); })
     ]).then(([s, c]) => {
-      setShipments(s);
-      setScreenings(c);
+      setShipments({ data: records(s), pagination: s?.pagination || {} });
+      setScreenings({ data: records(c), pagination: c?.pagination || {} });
       setLoading(false);
     }).catch(e => { setError(e.message); setLoading(false); });
   }, []);

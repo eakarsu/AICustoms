@@ -1,4 +1,12 @@
 import React, { useState } from 'react';
+import FullFieldPresets from '../components/FullFieldPresets';
+import FormattedAIReport from '../components/FormattedAIReport';
+
+const presets = [
+  { label: 'Steel bottle', values: { product_name: 'Insulated stainless steel water bottle', description: 'Reusable 750 ml vacuum-insulated bottle with screw cap for cold drinks.', material: '304 stainless steel body, polypropylene cap', intended_use: 'Consumer beverage container' } },
+  { label: 'Cotton shirt', values: { product_name: 'Men’s cotton knit shirt', description: 'Short-sleeve knitted crew-neck shirt for everyday wear.', material: '100% cotton', intended_use: 'Adult casual apparel' } },
+  { label: 'LED lamp', values: { product_name: 'Rechargeable desk lamp', description: 'USB-C rechargeable LED task light with adjustable arm and built-in battery.', material: 'Aluminum, ABS plastic, LED module', intended_use: 'Indoor desk lighting' } },
+];
 
 const card = { background: '#fff', borderRadius: '10px', padding: '2rem', boxShadow: '0 1px 4px rgba(0,0,0,0.1)', maxWidth: '700px' };
 const label = { display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#374151', fontSize: '0.9rem' };
@@ -46,6 +54,7 @@ export default function Classify() {
       <h1 style={h1}>HS Code Classification</h1>
       <div style={card}>
         <form onSubmit={handleSubmit}>
+          <FullFieldPresets value={form} presets={presets} onChange={setForm} disabled={loading} />
           <label style={label}>Product Name *</label>
           <input style={input} name="product_name" value={form.product_name} onChange={handleChange} placeholder="e.g. Stainless steel water bottle" required />
 
@@ -65,35 +74,7 @@ export default function Classify() {
 
         {error && <div style={{ color: '#ef4444', marginTop: '1rem', padding: '0.75rem', background: '#fef2f2', borderRadius: '6px' }}>{error}</div>}
 
-        {result && (
-          <div style={resultBox}>
-            <h3 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: '1rem', color: '#0369a1' }}>Classification Result</h3>
-            {result.hs_code && (
-              <div style={{ marginBottom: '0.75rem' }}>
-                <span style={{ fontWeight: 700, fontSize: '1.5rem', color: '#1a2340' }}>{result.hs_code}</span>
-                {result.confidence && <span style={{ marginLeft: '1rem', color: '#64748b', fontSize: '0.9rem' }}>Confidence: {result.confidence}%</span>}
-              </div>
-            )}
-            {result.description && <p style={{ marginBottom: '0.5rem', color: '#374151' }}><strong>Description:</strong> {result.description}</p>}
-            {result.duty_rate_estimate && <p style={{ marginBottom: '0.5rem', color: '#374151' }}><strong>Estimated Duty Rate:</strong> {result.duty_rate_estimate}</p>}
-            {result.reasoning && <p style={{ marginBottom: '0.75rem', color: '#374151' }}><strong>Reasoning:</strong> {result.reasoning}</p>}
-            {result.alternative_codes?.length > 0 && (
-              <div>
-                <strong>Alternative Codes:</strong>
-                <ul style={{ marginTop: '0.4rem', paddingLeft: '1.2rem' }}>
-                  {result.alternative_codes.map((alt, i) => (
-                    <li key={i} style={{ color: '#64748b', fontSize: '0.9rem' }}>{alt.code} — {alt.description}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {result.raw_response && (
-              <pre style={{ background: '#1e293b', color: '#e2e8f0', padding: '1rem', borderRadius: '6px', fontSize: '0.8rem', overflow: 'auto', marginTop: '0.5rem' }}>
-                {result.raw_response}
-              </pre>
-            )}
-          </div>
-        )}
+        {result && <FormattedAIReport response={result} title="Classification result" />}
       </div>
     </div>
   );

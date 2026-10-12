@@ -4,6 +4,18 @@ const initialItems = [
   { id: 1, owner: 'Ops', priority: 'High', status: 'Ready', task: 'Review exception queue' },
   { id: 2, owner: 'AI', priority: 'Medium', status: 'In progress', task: 'Draft recommended next actions' },
   { id: 3, owner: 'Compliance', priority: 'Low', status: 'Queued', task: 'Attach audit evidence' },
+  { id: 4, owner: 'Ops', priority: 'High', status: 'Queued', task: 'Check shipment exceptions' },
+  { id: 5, owner: 'Compliance', priority: 'High', status: 'Ready', task: 'Review denied-party alerts' },
+  { id: 6, owner: 'Brokerage', priority: 'Medium', status: 'Queued', task: 'Confirm entry documentation' },
+  { id: 7, owner: 'Tariff', priority: 'Medium', status: 'Ready', task: 'Validate product classifications' },
+  { id: 8, owner: 'Ops', priority: 'Medium', status: 'In progress', task: 'Check carrier arrival updates' },
+  { id: 9, owner: 'Finance', priority: 'Low', status: 'Queued', task: 'Reconcile duty estimates' },
+  { id: 10, owner: 'Compliance', priority: 'High', status: 'In progress', task: 'Investigate screening matches' },
+  { id: 11, owner: 'Brokerage', priority: 'Medium', status: 'Ready', task: 'Review commercial invoices' },
+  { id: 12, owner: 'Ops', priority: 'Low', status: 'Queued', task: 'Confirm consignee contacts' },
+  { id: 13, owner: 'Tariff', priority: 'Medium', status: 'Queued', task: 'Check origin documentation' },
+  { id: 14, owner: 'Compliance', priority: 'Medium', status: 'Ready', task: 'Prepare weekly audit summary' },
+  { id: 15, owner: 'Ops', priority: 'Low', status: 'Queued', task: 'Close resolved shipment alerts' },
 ];
 
 export default function CodexOperationsFeature() {
